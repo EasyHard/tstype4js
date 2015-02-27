@@ -1,0 +1,11 @@
+{
+  "name": "tstype4js",
+  "version": "0.0.0",
+  "description": "vastly improve your js/node developing experiment with type infomation from typescript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
