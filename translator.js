@@ -1,5 +1,5 @@
 var ts = require('typescript');
-
+var helper = require('./helper');
 function StringSymbolWriter() {
     this.str = '';
     function append(text) {
@@ -22,20 +22,58 @@ function StringSymbolWriter() {
     }
 }
 
-function translateSymbol(checker, symbol) {
-    var type = checker.getTypeAtLocation(symbol.declarations[0]);
-    var props = checker.getPropertiesOfType(type);
+function translateSignature(checker, sign, context) {
     var result = {};
-    props.forEach(function (prop)) {
-        var translatedProp = translateSymbol(prop);
-        if (prop.name) {
-            result[prop.name] = translatedProp;
-        } else {
-            result.unnameProps = result.unnameProps || [];
-            result.unnameProps.push(translatedProp);
-        }
+    result.params = [];
+    sign.parameters.forEach(function (parameters) {
+
+    })
+    result.minArgumentCount = sign.minArgumentCount;
+}
+
+function translateFn(checker, fntype, context) {
+    var result = {};
+    var constructorfn = checker.getSignaturesOfType(fntype, ts.SignatureKind.Construct);
+    if (constructorfn && constructorfn.length > 0) {
+        constructorfn = constructorfn[0];
+        result.construct = translateSignature(checker, constructorfn, context);
     }
+    result.calls = checker.getSignaturesOfType(fntype, ts.SignatureKind.Call);
     debugger;
+    return result;
+}
+
+function translateType(checker, type, context) {
+    console.log('type flags', type.flags, helper.decodeEnum(type.flags, ts.TypeFlags));
+    var result = {};
+    if (type.flags & ts.TypeFlags.ObjectType) {
+        result.props = {};
+        var props = checker.getPropertiesOfType(type);
+        props.forEach(function (prop) {
+            var translatedProp = translateSymbol(checker, prop);
+            if (prop.name) {
+                result.props[prop.name] = translatedProp;
+            } else {
+                result.unnameProps = result.unnameProps || [];
+                result.unnameProps.push(translatedProp);
+            }
+        });
+    }
+    // NOTE: Anonymous type should be a function
+    if (type.flags & ts.TypeFlags.Anonymous) {
+        result.fn = translateFn(checker, type, context);
+    }
+}
+function translateSymbol(checker, symbol, context) {
+    if (symbol.name)
+        console.log('symbol name', symbol.name);
+    else
+        console.log('symbol', symbol);
+    console.log('symbol flags', symbol.flags, helper.decodeEnum(symbol.flags, ts.SymbolFlags))
+    var type = checker.getTypeAtLocation(symbol.declarations[0]);
+    var result = translateType(checker, type, context);
+    result.symbolName = symbol.name;
+    return result;
 }
 
 function compile(filenames, options) {
@@ -55,7 +93,8 @@ function compile(filenames, options) {
                     var exportSymbols = node.symbol.exports;
                     for (var i in exportSymbols) {
                         if (exportSymbols.hasOwnProperty(i)) {
-                            exportSymbols[i] = translateSymbol(checker, exportSymbols[i]);
+                            var context = {visitingTypes: {}};
+                            exportSymbols[i] = translateSymbol(checker, exportSymbols[i], context);
                         }
                     }
                     debugger;
