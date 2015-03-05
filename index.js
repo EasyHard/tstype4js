@@ -151,10 +151,13 @@ function compile(filenames, moduleName, options) {
 var dtsPath = '/home/easyhard/Projects/tstype4js/DefinitelyTyped/';
 var path = require('path');
 
+var cache = {};
 exports.require = function (moduleName) {
+    if (cache[moduleName]) return cache[moduleName];
+
     var filename = path.join(dtsPath, moduleName, moduleName + '.d.ts');
     console.log('filename', filename);
-    return compile([filename], moduleName, {
+    return cache[moduleName] = compile([filename], moduleName, {
         noEmitOnError: true, noImplicitAny: true,
         target: ts.ScriptTarget.ES5, module: ts.ModuleKind.CommonJS });
 };
