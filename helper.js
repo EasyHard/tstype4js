@@ -6,7 +6,6 @@ exports.decodeEnum = function decodeEnum(value, enumclass) {
 			if (nv & value) {
 				result.push(enumclass[v]);
 			}
-				
 		}
 	}
 	return result;
